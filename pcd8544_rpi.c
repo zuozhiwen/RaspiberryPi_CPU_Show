@@ -1,11 +1,12 @@
 /*
 =================================================================================
  Name        : pcd8544_rpi.c
- Version     : 0.2
+ Version     : 3.0
 
 ##############################
  modify code by rei1984 @ Raspifans.com 
  add IP address. 20160316
+ add CPU thermal degree 20160521
 ##############################
 
  Copyright (C) 2012 by Andre Wussow, 2012, desk@binerry.de
@@ -142,17 +143,95 @@ int main (void)
 			}
 			ifAddrStruct=ifAddrStruct->ifa_next;
 		}
+		
+		char CPUTemp[15];
+		{
+			int i;
+
+			for(i=0;i<15;i++)
+			{
+				CPUTemp[i]=0;
+			}
+		}
+
+
+
+#include <sys/stat.h>  
+#include <fcntl.h>  
+
+#define TEMP_PATH "/sys/class/thermal/thermal_zone0/temp"  
+#define MAX_SIZE 32  
+
+    int fd;  
+	double temp = 0;  
+	char buf[MAX_SIZE];  
+
+    fd = open(TEMP_PATH, O_RDONLY);  
+	if (fd < 0)
+	{  
+		printf("failed to open thermal_zone0/temp\n");   
+	}  
+
+    // 读取内容  
+	if (read(fd, buf, MAX_SIZE) < 0) 
+	{  
+		printf("failed to read temp\n");  
+	}  
+
+    // 转换为浮点数打印  
+	temp = atoi(buf) / 1000.0;  
+	printf("temp: %.2f\n", temp);  
+	
+
+
+	sprintf(CPUTemp,"CPUTemp:%.2f",temp);
+
+	// 关闭文件  
+	close(fd);  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//		int fd = open("/sys/class/thermal/thermal_zone0/temp","rt");
+//		if(fp)
+//		{
+//			fgets(text,5,fp);
+
+//			printf("%s",text);
+
+
+
+			//int temp = atoi(text);
+			//sprintf(CPUTemp,"CPU Temp:%2d",temp/1000);
+//			fclose(fp);		
+//		}
+//printf("88888888\n");
+//printf("%s",CPUTemp);
 
 
 	  // build screen
 	  //LCDdrawstring(0, 0, "Raspberry Pi:");
 
-	  LCDdrawstring(0, 1, "5iPi@taobao");
+	  LCDdrawstring(0, 1, "Raspberry Pi 0");
 	  LCDdrawline(0, 10, 83, 10, BLACK);
 	  LCDdrawstring(0, 12, uptimeInfo);
 	  LCDdrawstring(0, 21, cpuInfo);
 	  LCDdrawstring(0, 30, ramInfo);
-	  LCDdrawstring(0, 39, IPInfo);  //ip
+	  //LCDdrawstring(0, 39, IPInfo);  //ip
+	  LCDdrawstring(0, 39, CPUTemp);
 
 	  LCDdisplay();
 	  
