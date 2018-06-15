@@ -1,4 +1,4 @@
-[submodule "wiringpi"]
-	path = wiringpi
+[submodule "wiringPi"]
+	path = wiringPi
 	url = git://git.drogon.net/wiringPi
 	branch = master
