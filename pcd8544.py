@@ -2,6 +2,8 @@ import ctypes
 import datetime
 import os
 import re
+import RPi.GPIO as GPIO
+import time
 
 # pin setup
 _din = 1
@@ -16,6 +18,10 @@ contrast = 45
 
 BLACK = 1
 WHITE = 0
+LED = 7
+
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(LED, GPIO.OUT)
 
 lib = ctypes.cdll.LoadLibrary('./PCD8544.so')
 lib.wiringPiSetup()
@@ -26,7 +32,11 @@ lib.LCDclear()
 lib.LCDshowLogo()
 lib.delay(1000)
 
-while True:
+for i in range(0, 7):
+    GPIO.output(LED, i % 2)
+    time.sleep(0.2)
+
+while True:    
     lib.LCDclear()
     lib.LCDdrawstring(0, 1, b"Raspberry Pi 0")
     lib.LCDdrawline(0, 10, 83, 10, BLACK)
