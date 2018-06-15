@@ -1,4 +1,4 @@
-1.ÏÈ°²×°wiring pi.
+1.å…ˆå®‰è£…wiring pi.
 
 ref:http://wiringpi.com/wiringpi-and-the-raspberry-pi-compute-board/
 
@@ -9,11 +9,11 @@ cd wiringPi
 
 
 
-2.±àÒëÔ´´úÂë
+2.ç¼–è¯‘æºä»£ç 
 cc -o pcd8544_rpi pcd8544_rpi.c PCD8544.c  -L/usr/local/lib -lwiringPi
 
 
-3.ÔËĞĞ
+3.è¿è¡Œ
 
 sudo ./pcd8544_rpi
 
