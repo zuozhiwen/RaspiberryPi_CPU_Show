@@ -1,12 +1,17 @@
 /*
 =================================================================================
  Name        : pcd8544_rpi.c
- Version     : 0.1
+ Version     : 0.2
+
+##############################
+ modify code by rei1984 @ Raspifans.com 
+ add IP address. 20160316
+##############################
 
  Copyright (C) 2012 by Andre Wussow, 2012, desk@binerry.de
 
  Description :
-     A simple PCD8544 LCD (Nokia3310/5110) for Raspberry Pi for displaying some system informations.
+     A simple PCD8544 LCD  for Raspberry Pi for displaying some system informations.
 	 Makes use of WiringPI-library of Gordon Henderson (https://projects.drogon.net/raspberry-pi/wiringpi/)
 
 	 Recommended connection (http://www.raspberrypi.org/archives/384):
@@ -40,6 +45,16 @@ Lesser General Public License for more details.
 #include <sys/sysinfo.h>
 #include "PCD8544.h"
 
+//ip address header files
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <arpa/inet.h>
+
+
+
+
 // pin setup
 int _din = 1;
 int _sclk = 0;
@@ -53,6 +68,12 @@ int contrast = 45;
   
 int main (void)
 {
+	struct ifaddrs * ifAddrStruct=NULL;
+	void * tmpAddrPtr=NULL;
+
+	getifaddrs(&ifAddrStruct);
+
+
   // print infos
   printf("Raspberry Pi PCD8544 sysinfo display\n");
   printf("========================================\n");
@@ -100,12 +121,39 @@ int main (void)
 	  unsigned long totalRam = sys_info.freeram / 1024 / 1024;
 	  sprintf(ramInfo, "RAM %ld MB", totalRam);
 	  
+		// IP address
+		char IPInfo[15];
+		while (ifAddrStruct!=NULL)
+		{
+			if (ifAddrStruct->ifa_addr->sa_family==AF_INET) 
+			{   // check it is IP4 is a valid IP4 Address
+
+				tmpAddrPtr=&((struct sockaddr_in *)ifAddrStruct->ifa_addr)->sin_addr;
+				char addressBuffer[INET_ADDRSTRLEN];
+				inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+
+				if( strcmp(ifAddrStruct->ifa_name,"eth0")==0)
+				{
+					strcpy(IPInfo,addressBuffer);
+					//sprintf(IPInfo, "IP:%s", addressBuffer);
+					break;
+					//printf("%s IP4 Address %s\n", ifAddrStruct->ifa_name, addressBuffer);
+				}
+			}
+			ifAddrStruct=ifAddrStruct->ifa_next;
+		}
+
+
 	  // build screen
-	  LCDdrawstring(0, 0, "Raspberry Pi:");
+	  //LCDdrawstring(0, 0, "Raspberry Pi:");
+
+	  LCDdrawstring(0, 1, "5iPi@taobao");
 	  LCDdrawline(0, 10, 83, 10, BLACK);
 	  LCDdrawstring(0, 12, uptimeInfo);
-	  LCDdrawstring(0, 20, cpuInfo);
-	  LCDdrawstring(0, 28, ramInfo);
+	  LCDdrawstring(0, 21, cpuInfo);
+	  LCDdrawstring(0, 30, ramInfo);
+	  LCDdrawstring(0, 39, IPInfo);  //ip
+
 	  LCDdisplay();
 	  
 	  delay(1000);
