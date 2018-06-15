@@ -1,7 +1,8 @@
 # Raspiberry Pi Screen CPU Show
 ref:http://raspifans.com/bbs/forum.php?mod=viewthread&tid=123
 好的东西不应该在小的论坛被雪藏。这个程序是用C语言编写，用来将树莓派各种信息（cpu使用率、内存使用量、cpu温度、启动时间、IP等）展示到一块小小的屏幕上面，同时可以高度定制化（已经移植到python3），自定义任何信息，这取决个人的创造力。
-![](http://github.com/zuozhiwen/RaspiberryPi_CPU_Show/blob/master/ScreenShot/2.jpg)
+![cpushow](https://github.com/zuozhiwen/RaspiberryPi_CPU_Show/blob/master/ScreenShot/2.jpg?raw=true)
+
 ---
 ## Origin ReadMe
 1.先安装wiring pi.
