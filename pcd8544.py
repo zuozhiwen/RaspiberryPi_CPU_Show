@@ -56,7 +56,11 @@ def show_cpu_info():
         lib.LCDdrawline(0, 10, 83, 10, BLACK)
 
         uptime = float(os.popen('cat /proc/uptime').read().split(' ')[0]) // 60
-        uptimeInfo = "Uptime %d min." % uptime
+        if(uptime < 1000):
+            uptimeInfo = "Uptime %d min." % uptime
+        else:
+            uptimeInfo = "Uptime %.1f h" % (uptime / 60.)
+        
         lib.LCDdrawstring(0, 12, uptimeInfo.encode())
 
         loads = 100 - float(re.findall(r',\s([1-9]\d*.\d*|0.\d*[1-9]\d*)\sid,', os.popen('top -bn 1 -i -c').read())[0])
