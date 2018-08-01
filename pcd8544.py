@@ -5,10 +5,13 @@ import os
 import re
 import RPi.GPIO as GPIO
 import time
+<<<<<<< HEAD
 import dateutil.parser
 import pika
 import json
 import threading
+=======
+>>>>>>> aa38d0660d7966a1b3a40d6310ff1ab1705b78c9
 
 # pin setup
 _din = 1
