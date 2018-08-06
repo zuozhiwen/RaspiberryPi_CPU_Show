@@ -27,27 +27,10 @@ LED = 7
 ON = 0
 OFF = 1
 
-GPIO.setmode(GPIO.BOARD)
-GPIO.setwarnings(False)
-GPIO.setup(LED, GPIO.OUT)
-
-lib = ctypes.cdll.LoadLibrary('./PCD8544.so')
-lib.wiringPiSetup()
-lib.LCDInit(_sclk, _din, _dc, _cs, _rst, contrast)
-lib.LCDclear()
-
-# show logo
-lib.LCDshowLogo()
-lib.delay(1000)
-
-for i in range(0, 6):
-    GPIO.output(LED, i % 2)
-    time.sleep(0.2)
-
-if datetime.now().time() > dateutil.parser.parse('18:30').time() or datetime.now().time() < dateutil.parser.parse('7:00').time():
-    GPIO.output(LED, ON)
-else:
-    GPIO.output(LED, OFF)
+def flash_screen(round):
+    for i in range(round * 2):
+        GPIO.output(LED, i % 2)
+        time.sleep(0.2)
 
 def show_cpu_info():
     while True:    
@@ -99,7 +82,32 @@ def start_listen():
     chan.queue_declare(queue='RaspiberryPiWH')
     chan.basic_consume(callback, queue='RaspiberryPiWH', no_ack=True)
     chan.start_consuming()
+    
 
-threading.Thread(target=show_cpu_info).start()
+#=============================================================================================================================
+
+GPIO.setmode(GPIO.BOARD)
+GPIO.setwarnings(False)
+GPIO.setup(LED, GPIO.OUT)
+
+lib = ctypes.cdll.LoadLibrary('./PCD8544.so')
+lib.wiringPiSetup()
+lib.LCDInit(_sclk, _din, _dc, _cs, _rst, contrast)
+lib.LCDclear()
+
+# show logo
+lib.LCDshowLogo()
+lib.delay(1000)
+
+flash_screen(3)
+
+if datetime.now().time() > dateutil.parser.parse('18:30').time() or datetime.now().time() < dateutil.parser.parse('7:00').time():
+    GPIO.output(LED, ON)
+else:
+    GPIO.output(LED, OFF)
+
+showcpu = threading.Thread(target=show_cpu_info)
+showcpu.setDaemon(True)
+showcpu.start()
 
 start_listen()
