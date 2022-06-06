@@ -1,5 +1,4 @@
 import ctypes
-import datetime
 from datetime import datetime
 import os
 import re
@@ -9,6 +8,8 @@ import dateutil.parser
 import pika
 import json
 import threading
+import psutil
+import math
 
 # pin setup
 _din = 1
@@ -27,64 +28,82 @@ LED = 7
 ON = 0
 OFF = 1
 
+
 def flash_screen(round):
     for i in range(round * 2):
         GPIO.output(LED, i % 2)
         time.sleep(0.2)
 
+
+def display_on_screen(uptime, loads, mem_info):
+    # title
+    lib.LCDclear()
+    lib.LCDdrawstring(0, 1, b"Raspberry Pi 3")
+    lib.LCDdrawline(0, 10, 83, 10, BLACK)
+    
+    # line 1
+    if(uptime < 1000):
+        uptime_info = "Uptime %d min." % uptime
+    else:
+        uptime_info = "Uptime %.1f h" % (uptime / 60.)
+    lib.LCDdrawstring(0, 12, uptime_info.encode())
+    
+    # line 2
+    cpu_info = 'CPU %d%%' % loads
+    lib.LCDdrawstring(0, 21, cpu_info.encode())
+    
+    # line 3
+    used_mem = mem_info.used
+    ram_info = 'RAM {0} MB {1}%'.format(int(math.ceil(used_mem / 1024 / 1024)), int(mem_info.percent))
+    lib.LCDdrawstring(0, 30, ram_info.encode())
+    
+    # line 4
+    show_round = int(datetime.now().timestamp() / 15 % 2)
+    if show_round == 1:
+        sensors_temp = psutil.sensors_temperatures()
+        cpu_temp = "CPUTemp:%.2f" % sensors_temp['cpu_thermal'][0].current
+        lib.LCDdrawstring(0, 39, cpu_temp.encode())
+    else:
+        net_info = psutil.net_if_addrs()
+        ip_address = net_info['wlan0'][0].address
+        lib.LCDdrawstring(0, 39, ip_address.encode()) 
+    
+    lib.LCDdisplay()
+    
+
 def show_cpu_info():
-    while True:    
-        lib.LCDclear()
-        lib.LCDdrawstring(0, 1, b"Raspberry Pi 0")
-        lib.LCDdrawline(0, 10, 83, 10, BLACK)
-
-        uptime = float(os.popen('cat /proc/uptime').read().split(' ')[0]) // 60
-        if(uptime < 1000):
-            uptimeInfo = "Uptime %d min." % uptime
-        else:
-            uptimeInfo = "Uptime %.1f h" % (uptime / 60.)
-        
-        lib.LCDdrawstring(0, 12, uptimeInfo.encode())
-
-        loads = 100 - float(re.findall(r',\s([1-9]\d*.\d*|0.\d*[1-9]\d*)\sid,', os.popen('top -bn 1 -i -c').read())[0])
-        cpuInfo = 'CPU %d%%' % loads
-        lib.LCDdrawstring(0, 21, cpuInfo.encode())
-
-        mem_info_str = os.popen('cat /proc/meminfo').read()
-        total_mem = int(re.findall(r'MemTotal:\s+(\d+)\s+kB', mem_info_str)[0])
-        free_mem = int(re.findall(r'MemFree:\s+(\d+)\s+kB', mem_info_str)[0])
-        ramInfo = 'RAM {0} MB {1}%'.format(int(free_mem / 1024), int((1 - free_mem / total_mem) * 100))
-        lib.LCDdrawstring(0, 30, ramInfo.encode())
-
-        if uptime > 3:
-            temperature = float(os.popen('cat /sys/class/thermal/thermal_zone0/temp').read()) / 1000
-            CPUTemp = "CPUTemp:%.2f" % temperature 
-            lib.LCDdrawstring(0, 39, CPUTemp.encode())
-        else:
-            IPInfo = re.findall(r"wlan0[\s\S]+inet\s(\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b)", os.popen("ifconfig").read())[0]
-            lib.LCDdrawstring(0, 39, IPInfo.encode())  #ip
-
-        lib.LCDdisplay()
+    while True:
+        uptime = (datetime.now().timestamp() - psutil.boot_time()) / 60
+        loads = psutil.cpu_percent(interval=1)
+        mem_info = psutil.virtual_memory()
+        display_on_screen(uptime, loads, mem_info)
         lib.delay(2000)
 
-def callback(ch,method,properties,body):
+
+def consume_method(ch, method, properties, body):
     ins = json.loads(body.decode())
-    if ins['Action'] == 1:
-        if ins['ExtraParams']['Switch'] == 'ON':
+    if ins['action'] == 1:
+        if ins['params']['led'] == 1:
             GPIO.output(LED, ON)
         else:
             GPIO.output(LED, OFF)
 
-def start_listen():
-    user_pwd = pika.PlainCredentials('root', 'live01rabbit')
-    connection = pika.BlockingConnection(pika.ConnectionParameters('47.98.181.100',5672,credentials=user_pwd))
-    chan = connection.channel()
-    chan.queue_declare(queue='RaspiberryPiWH')
-    chan.basic_consume(callback, queue='RaspiberryPiWH', no_ack=True)
-    chan.start_consuming()
-    
 
-#=============================================================================================================================
+def start_listen():
+    with open('rabbitmq_password.txt') as f:
+        rabbit_info = f.read().split('|')
+        host = rabbit_info[0]
+        username = rabbit_info[1]
+        password = rabbit_info[2]
+    user_pwd = pika.PlainCredentials(username, password)
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host, 5672, credentials=user_pwd))
+    chan = connection.channel()
+    chan.queue_declare('pi_command')
+    chan.basic_consume('pi_command', consume_method, True)
+    chan.start_consuming()
+
+
+# =============================================================================================================================
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
