@@ -60,7 +60,7 @@ def display_on_screen(uptime, loads, mem_info, host_name :str = None):
     lib.LCDdrawstring(0, 12, uptime_info.encode())
 
     # line 2
-    cpu_info = 'CPU %d%%' % loads
+    cpu_info = 'CPU {0:.1f}%'.format(loads)
     lib.LCDdrawstring(0, 21, cpu_info.encode())
 
     # line 3
