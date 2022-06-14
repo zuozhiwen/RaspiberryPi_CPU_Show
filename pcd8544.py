@@ -90,7 +90,7 @@ def show_cpu_info():
             raw_mem_info = psutil.virtual_memory()
             mem_info = {'used': raw_mem_info.used, 'percent': raw_mem_info.percent}
             display_on_screen(uptime, loads, mem_info)
-            lib.delay(2000)
+        lib.delay(2000)
 
 
 def consume_method(ch, method, properties, body):
